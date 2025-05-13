@@ -12,29 +12,49 @@ type AnimeService interface {
 	DeleteUserAnime(userID string, malID int) error
 }
 
+// type animeService struct {
+// 	repo         repository.AnimeRepository
+// 	userListRepo repository.UserAnimeListRepository
+// }
+
+// func NewAnimeService(repo repository.AnimeRepository, userListRepo repository.UserAnimeListRepository) AnimeService {
+// 	return &animeService{
+// 		repo:         repo,
+// 		userListRepo: userListRepo,
+// 	}
+// }
+
 type animeService struct {
-	repo         repository.AnimeRepository
-	userListRepo repository.UserAnimeListRepository
+	repo          repository.AnimeRepository
+	userAnimeRepo repository.UserAnimeListRepository
 }
 
-func NewAnimeService(repo repository.AnimeRepository, userListRepo repository.UserAnimeListRepository) AnimeService {
-	return &animeService{
-		repo:         repo,
-		userListRepo: userListRepo,
-	}
+func NewAnimeService(repo repository.AnimeRepository, userAnimeRepo repository.UserAnimeListRepository) AnimeService {
+	return &animeService{repo: repo, userAnimeRepo: userAnimeRepo}
 }
 
-func (s *animeService) GetUserAnimeList(userID string) ([]domain.UserAnimeList, error) {
-	return s.userListRepo.GetByUserID(userID)
-}
+// func (s *animeService) GetUserAnimeList(userID string) ([]domain.UserAnimeList, error) {
+// 	return s.userListRepo.GetByUserID(userID)
+// }
 
 func (s *animeService) UpdateUserAnime(userID string, malID int, status, note string) error {
-	return s.userListRepo.UpdateStatus(userID, malID, status, note)
+	return s.userAnimeRepo.UpdateStatus(userID, malID, status, note)
 }
 
 func (s *animeService) DeleteUserAnime(userID string, malID int) error {
-	return s.userListRepo.Delete(userID, malID)
+	return s.userAnimeRepo.Delete(userID, malID)
 }
+
+// func (s *animeService) SaveFavorite(userID string, malID int, title, status, imageURL string) error {
+// 	anime := &domain.Anime{
+// 		UserID:   userID,
+// 		MalID:    malID,
+// 		Title:    title,
+// 		Status:   status,
+// 		ImageURL: imageURL,
+// 	}
+// 	return s.repo.Create(anime)
+// }
 
 func (s *animeService) SaveFavorite(userID string, malID int, title, status, imageURL string) error {
 	anime := &domain.Anime{
@@ -44,5 +64,19 @@ func (s *animeService) SaveFavorite(userID string, malID int, title, status, ima
 		Status:   status,
 		ImageURL: imageURL,
 	}
-	return s.repo.Create(anime)
+	if err := s.repo.Create(anime); err != nil {
+		return err
+	}
+
+	// Save also to user_anime_lists
+	return s.userAnimeRepo.Add(&domain.UserAnimeList{
+		UserID: userID,
+		MalID:  malID,
+		Status: status,
+		Note:   "",
+	})
+}
+
+func (s *animeService) GetUserAnimeList(userID string) ([]domain.UserAnimeList, error) {
+	return s.userAnimeRepo.GetByUserID(userID)
 }

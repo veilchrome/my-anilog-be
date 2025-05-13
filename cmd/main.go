@@ -37,6 +37,9 @@ func main() {
 	userAnimeListRepo := repository.NewUserAnimeListRepository(db)
 	animeService := service.NewAnimeService(animeRepo, userAnimeListRepo)
 
+	// userAnimeListRepo := repository.NewUserAnimeListRepository(db)
+	// animeService := service.NewAnimeService(animeRepo, userAnimeListRepo)
+
 	routes.RegisterRoutes(r, userService, animeService, jwtManager)
 
 	r.Run()
